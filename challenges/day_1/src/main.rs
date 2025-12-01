@@ -14,10 +14,8 @@ fn solve(sequence: Sequence) -> (Rotation, u32) {
     let mut zeroes = 0;
     let ending = sequence.iter().fold(Rotation(50), |accumulator, &new| {
         let next = accumulator + new;
-        if next == Rotation(0) {
-            zeroes += 1
-        }
-        next
+        zeroes += next.1;
+        next.0
     });
     (ending, zeroes)
 }
@@ -42,14 +40,27 @@ const DIAL_MAX: u32 = 100;
 struct Rotation(u32);
 
 impl Add<DirectionalRotation> for Rotation {
-    type Output = Rotation;
+    type Output = (Rotation, u32);
 
     fn add(self, rhs: DirectionalRotation) -> Self::Output {
         let magnitude = rhs.1 % DIAL_MAX;
-        match rhs.0 {
+        let result = match rhs.0 {
             Direction::Right => Rotation((self.0 + magnitude) % DIAL_MAX),
             Direction::Left => Rotation((self.0 + DIAL_MAX - magnitude) % DIAL_MAX),
-        }
+        };
+        let zeroes = match rhs.0 {
+            Direction::Right => (rhs.1 + self.0) / DIAL_MAX,
+            Direction::Left => {
+                if rhs.1 < self.0 {
+                    0
+                } else if self.0 == 0 {
+                    rhs.1 / DIAL_MAX
+                } else {
+                    1 + (rhs.1 - self.0) / DIAL_MAX
+                }
+            }
+        };
+        (result, zeroes)
     }
 }
 
@@ -84,6 +95,7 @@ impl FromStr for DirectionalRotation {
 #[cfg(test)]
 mod tests {
     use crate::{Direction, DirectionalRotation, Rotation};
+    use test_case::test_case;
 
     #[test]
     fn can_parse_valid() {
@@ -109,67 +121,43 @@ mod tests {
         }
     }
 
-    #[test]
-    fn directional_rotation_addition_correctness() {
+    #[test_case(Rotation(0), Direction::Right, 1, Rotation(1), 0)]
+    #[test_case(Rotation(99), Direction::Right, 1, Rotation(0), 1)]
+    #[test_case(Rotation(20), Direction::Right, 20, Rotation(40), 0)]
+    #[test_case(Rotation(99), Direction::Right, 99, Rotation(98), 1)]
+    #[test_case(Rotation(0), Direction::Left, 1, Rotation(99), 0)]
+    #[test_case(Rotation(99), Direction::Left, 1, Rotation(98), 0)]
+    #[test_case(Rotation(20), Direction::Left, 20, Rotation(0), 1)]
+    #[test_case(Rotation(0), Direction::Left, 90, Rotation(10), 0)]
+    #[test_case(Rotation(0), Direction::Left, 99, Rotation(1), 0)]
+    #[test_case(Rotation(0), Direction::Left, 100, Rotation(0), 1)]
+    #[test_case(Rotation(1), Direction::Left, 200, Rotation(1), 2)]
+    #[test_case(Rotation(11), Direction::Right, 8, Rotation(19), 0)]
+    #[test_case(Rotation(19), Direction::Left, 19, Rotation(0), 1)]
+    #[test_case(Rotation(50), Direction::Right, 1000, Rotation(50), 10)]
+    #[test_case(Rotation(50), Direction::Left, 1000, Rotation(50), 10)]
+    fn directional_rotation_addition_correctness(
+        start: Rotation,
+        direction: Direction,
+        magnitude: u32,
+        expected_rotation: Rotation,
+        expected_zeroes: u32,
+    ) {
         assert_eq!(
-            Rotation(0) + DirectionalRotation(Direction::Right, 0),
-            Rotation(0),
-            "identity right"
-        );
-        assert_eq!(
-            Rotation(0) + DirectionalRotation(Direction::Right, 1),
-            Rotation(1),
-            "small right"
-        );
-        assert_eq!(
-            Rotation(99) + DirectionalRotation(Direction::Right, 1),
-            Rotation(0),
-            "small overflow"
-        );
-        assert_eq!(
-            Rotation(20) + DirectionalRotation(Direction::Right, 20),
-            Rotation(40),
-            "normal right"
-        );
-        assert_eq!(
-            Rotation(99) + DirectionalRotation(Direction::Right, 99),
-            Rotation(98),
-            "large overflow"
-        );
-        assert_eq!(
-            Rotation(0) + DirectionalRotation(Direction::Left, 0),
-            Rotation(0),
-            "identity left"
-        );
-        assert_eq!(
-            Rotation(0) + DirectionalRotation(Direction::Left, 1),
-            Rotation(99),
-            "small underflow"
-        );
-        assert_eq!(
-            Rotation(99) + DirectionalRotation(Direction::Left, 1),
-            Rotation(98),
-            "small left"
-        );
-        assert_eq!(
-            Rotation(20) + DirectionalRotation(Direction::Left, 20),
-            Rotation(0),
-            "normal left"
-        );
-        assert_eq!(
-            Rotation(0) + DirectionalRotation(Direction::Left, 90),
-            Rotation(10),
-            "large underflow"
-        );
-        assert_eq!(
-            Rotation(11) + DirectionalRotation(Direction::Right, 8),
-            Rotation(19),
-            "example 1"
-        );
-        assert_eq!(
-            Rotation(19) + DirectionalRotation(Direction::Left, 19),
-            Rotation(0),
-            "example 2"
+            start + DirectionalRotation(direction, magnitude),
+            (expected_rotation, expected_zeroes),
+            r#"
+            start: {:?}
+            direction: {:?}
+            magnitude: {}
+            expected_rotation: {:?}
+            expected_zeroes: {}
+            "#,
+            start,
+            direction,
+            magnitude,
+            expected_rotation,
+            expected_zeroes
         );
     }
 
@@ -191,6 +179,6 @@ L82
             .to_owned(),
         )
         .unwrap();
-        assert_eq!(super::solve(parsed), (Rotation(32), 3));
+        assert_eq!(super::solve(parsed), (Rotation(32), 6));
     }
 }
