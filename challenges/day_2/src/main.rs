@@ -17,11 +17,13 @@ fn solve(sequence: Sequence) -> u64 {
             let mut occurrences = 0;
             for i in range {
                 let as_string = i.to_string();
-                let length = as_string.len();
-                let first_half = &as_string[..length / 2];
-                let second_half = &as_string[length / 2..];
-                if first_half == second_half {
-                    occurrences += i;
+                for j in 1..as_string.len() {
+                    if (as_string.split(&as_string[..j]).collect::<Vec<_>>().len() - 1) * j
+                        == as_string.len()
+                    {
+                        occurrences += i;
+                        break;
+                    }
                 }
             }
             occurrences
@@ -55,6 +57,6 @@ mod tests {
         let input = "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124".to_owned();
         let parsed = super::parse_input(input).unwrap();
         let solution = super::solve(parsed);
-        assert_eq!(solution, 1227775554);
+        assert_eq!(solution, 4174379265);
     }
 }
