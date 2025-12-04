@@ -45,7 +45,7 @@ fn parse_input(input_data: &str) -> Result<Sequence, String> {
         .map(str::trim)
         .filter(|datapoint| !datapoint.is_empty())
         .map(parse_one)
-        .collect::<Option<Sequence>>()
+        .collect::<Option<_>>()
         .ok_or_else(|| "invalid input".to_string())
 }
 
@@ -55,7 +55,7 @@ fn parse_one(value: &str) -> Option<Vec<u8>> {
     value
         .chars()
         .map(|character| character.to_digit(10).map(|x| x as u8))
-        .collect::<Option<Vec<u8>>>()
+        .collect()
 }
 
 #[cfg(test)]
