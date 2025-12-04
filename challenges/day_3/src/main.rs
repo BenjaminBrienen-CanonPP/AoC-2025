@@ -1,3 +1,4 @@
+use std::cmp::Reverse;
 use std::fs;
 
 fn main() -> Result<(), String> {
@@ -14,31 +15,25 @@ fn solve(sequence: Sequence) -> u64 {
         .into_iter()
         .map(|bank| {
             let times = 12;
-            let mut result = 0u64;
+            let mut result: u64 = 0;
             let mut last_index = None;
             for i in 0..times {
-                let skip = last_index.map_or(0, |index| index + 1);
-                let greatest = bank
-                    .clone()
-                    .into_iter()
-                    .skip(skip)
-                    .take(
-                        (bank.len() - skip) // remaining possible
-                        - (times - i)  // needed remaining = times - i
-                         + 1, // lookahead
-                    )
-                    .max()
-                    .unwrap();
-                last_index = Some(
-                    bank.clone()
-                        .into_iter()
-                        .skip(skip)
-                        .position(|x| x == greatest)
-                        .unwrap()
-                        + skip,
-                );
-                result *= 10;
-                result += greatest as u64;
+                let start = if let Some(index) = last_index {
+                    index + 1
+                } else {
+                    0
+                };
+                let end = bank.len() - (times - i);
+                let window = &bank[start..=end];
+                let (offset, greatest) = window
+                    .iter()
+                    .copied()
+                    .enumerate()
+                    // Prefer the earliest index on ties
+                    .max_by_key(|(idx, val)| (*val, Reverse(*idx)))
+                    .expect("window is non-empty");
+                last_index = Some(start + offset);
+                result = result * 10 + greatest as u64;
             }
             result
         })
