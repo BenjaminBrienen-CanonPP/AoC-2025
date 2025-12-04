@@ -5,14 +5,14 @@ fn main() -> Result<(), String> {
     let input_data = fs::read_to_string("./assets/day_3/input.txt")
         .map_err(|_| "failed to read file".to_owned())?;
     let sequence = parse_input(&input_data)?;
-    let result = solve(sequence);
-    println!("Result: {result:?}");
+    let result = solve(&sequence);
+    println!("Result: {result}");
     Ok(())
 }
 
-fn solve(sequence: Sequence) -> u64 {
+fn solve(sequence: &Sequence) -> u64 {
     sequence
-        .into_iter()
+        .iter()
         .map(|bank| {
             let number_of_digits_to_pick = 12;
             let mut result: u64 = 0;
@@ -68,7 +68,7 @@ mod tests {
     #[test_case("818181911112111", 888911112111)]
     fn example_correct(input: &str, expect: u64) {
         let parsed = super::parse_input(input).unwrap();
-        let solution = super::solve(parsed);
+        let solution = super::solve(&parsed);
         assert_eq!(solution, expect);
     }
 }
