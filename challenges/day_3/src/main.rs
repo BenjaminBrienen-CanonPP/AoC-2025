@@ -14,26 +14,25 @@ fn solve(sequence: Sequence) -> u64 {
     sequence
         .into_iter()
         .map(|bank| {
-            let times = 12;
+            let number_of_digits_to_pick = 12;
             let mut result: u64 = 0;
             let mut last_index = None;
-            for i in 0..times {
+            for number_of_digits_picked in 0..number_of_digits_to_pick {
                 let start = if let Some(index) = last_index {
                     index + 1
                 } else {
                     0
                 };
-                let end = bank.len() - (times - i);
+                let end = bank.len() - (number_of_digits_to_pick - number_of_digits_picked);
                 let window = &bank[start..=end];
                 let (offset, greatest) = window
                     .iter()
-                    .copied()
                     .enumerate()
                     // Prefer the earliest index on ties
-                    .max_by_key(|(idx, val)| (*val, Reverse(*idx)))
+                    .max_by_key(|(index, value)| (*value, Reverse(*index)))
                     .expect("window is non-empty");
                 last_index = Some(start + offset);
-                result = result * 10 + greatest as u64;
+                result = result * 10 + *greatest as u64;
             }
             result
         })
