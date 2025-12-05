@@ -1,4 +1,3 @@
-use std::cmp::Reverse;
 use std::fs;
 
 fn main() -> Result<(), String> {
@@ -11,45 +10,51 @@ fn main() -> Result<(), String> {
 }
 
 fn solve(mut sequence: Sequence) -> u64 {
-    let padding = vec![Spot::Empty; sequence.len()];
-    sequence.insert(0, padding.clone());
-    sequence.push(padding);
-    sequence
-        .windows(3)
-        .map(|x| {
-            let mut above = x[0].clone();
-            let mut middle = x[1].clone();
-            let mut below = x[2].clone();
-            let mut result: u64 = 0;
-            above.insert(0, Spot::Empty);
-            above.push(Spot::Empty);
-            middle.insert(0, Spot::Empty);
-            middle.push(Spot::Empty);
-            below.insert(0, Spot::Empty);
-            below.push(Spot::Empty);
-            for spot in 1..middle.len() - 1 {
-                if middle[spot] == Spot::Paper
-                    && [
-                        above[spot - 1],
-                        above[spot],
-                        above[spot + 1],
-                        middle[spot - 1],
-                        middle[spot + 1],
-                        below[spot - 1],
-                        below[spot],
-                        below[spot + 1],
-                    ]
-                    .iter()
-                    .filter(|spot| **spot == Spot::Paper)
-                    .count()
-                        < 4
-                {
-                    result += 1;
+    fn get(sequence: &Sequence, y: isize, x: isize) -> Option<Spot> {
+        if y < 0 || x < 0 || y >= sequence.len() as isize || x >= sequence[0].len() as isize {
+            return None;
+        }
+        Some(sequence[y as usize][x as usize])
+    }
+    let start = sequence
+        .iter()
+        .flatten()
+        .filter(|spot| **spot == Spot::Paper)
+        .count();
+    let mut is_changed = true;
+    while is_changed {
+        is_changed = false;
+        for x in 0..sequence[0].len() {
+            for y in 0..sequence.len() {
+                let papers = [
+                    get(&sequence, y as isize - 1, x as isize - 1),
+                    get(&sequence, y as isize - 1, x as isize + 0),
+                    get(&sequence, y as isize - 1, x as isize + 1),
+                    get(&sequence, y as isize + 0, x as isize - 1),
+                    // get(&sequence, y as isize + 0, x as isize + 0),
+                    get(&sequence, y as isize + 0, x as isize + 1),
+                    get(&sequence, y as isize + 1, x as isize - 1),
+                    get(&sequence, y as isize + 1, x as isize + 0),
+                    get(&sequence, y as isize + 1, x as isize + 1),
+                ]
+                .iter()
+                .filter(|spot| spot.is_some_and(|spot| spot == Spot::Paper))
+                .count();
+                // println!("x: {x}, y: {y}, papers: {papers}");
+                if sequence[y][x] == Spot::Paper && papers < 4 {
+                    // println!("x: {x}, y: {y} is removable");
+                    sequence[y][x] = Spot::Empty;
+                    is_changed = true;
                 }
             }
-            result
-        })
-        .sum()
+        }
+    }
+    let end = sequence
+        .iter()
+        .flatten()
+        .filter(|spot| **spot == Spot::Paper)
+        .count();
+    (start - end) as u64
 }
 
 fn parse_input(input_data: &str) -> Result<Sequence, String> {
@@ -98,7 +103,7 @@ mod tests {
 .@@@@@@@@.
 @.@.@@@.@.
 ",
-        13
+        43
     )]
     fn example_correct(input: &str, expect: u64) {
         let parsed = super::parse_input(input).unwrap();
