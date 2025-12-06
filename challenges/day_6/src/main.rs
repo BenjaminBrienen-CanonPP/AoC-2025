@@ -83,7 +83,7 @@ mod tests {
   6 98  215 314
 *   +   *   +  
 ",
-        4277556
+        3263827
     )]
     fn example_correct(input: &str, expect: Operand) {
         let parsed = super::parse_input(input).unwrap();
