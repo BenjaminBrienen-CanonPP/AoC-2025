@@ -1,5 +1,6 @@
 [workspace]
 members = ["challenges/*"]
+resolver = "3"
 
 [workspace.dependencies]
 test-case = "3.3.1"
